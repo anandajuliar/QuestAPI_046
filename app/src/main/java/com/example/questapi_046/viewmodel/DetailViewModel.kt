@@ -1,20 +1,27 @@
+@file:OptIn(InternalSerializationApi::class)
+
 package com.example.questapi_046.viewmodel
 
+import android.annotation.SuppressLint
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.questapi_046.modeldata.DetailSiswa
-import com.example.questapi_046.modeldata.toDetailSiswa
+import com.example.questapi_046.modeldata.DataSiswa
 import com.example.questapi_046.repositori.RepositoryDataSiswa
+import com.example.questapi_046.uicontroller.route.DestinasiDetail
 import kotlinx.coroutines.launch
+import kotlinx.serialization.InternalSerializationApi
+import retrofit2.HttpException
+import retrofit2.Response
+import java.io.IOException
 
-sealed interface DetailUiState {
-    data class Success(val detailSiswa: DetailSiswa) : DetailUiState
-    object Error : DetailUiState
-    object Loading : DetailUiState
+sealed interface StatusUiDetail {
+    data class Success(val satusiswa: DataSiswa) : StatusUiDetail
+    object Error : StatusUiDetail
+    object Loading : StatusUiDetail
 }
 
 class DetailViewModel(
@@ -22,36 +29,40 @@ class DetailViewModel(
     private val repositoryDataSiswa: RepositoryDataSiswa
 ) : ViewModel() {
 
-    private val _id: Int = checkNotNull(savedStateHandle["id"])
+    private val idSiswa: Int =
+        checkNotNull(savedStateHandle[DestinasiDetail.itemIdArg])
 
-    var detailUiState: DetailUiState by mutableStateOf(DetailUiState.Loading)
+    var statusUiDetail: StatusUiDetail by mutableStateOf(StatusUiDetail.Loading)
         private set
 
     init {
-        getDetailSiswa()
+        getSatuSiswa()
     }
 
-    fun getDetailSiswa() {
+    fun getSatuSiswa() {
         viewModelScope.launch {
-            detailUiState = DetailUiState.Loading
-            detailUiState = try {
-                val dataSiswa = repositoryDataSiswa.getDataSiswa().find { it.id == _id }
-                if (dataSiswa != null) {
-                    DetailUiState.Success(dataSiswa.toDetailSiswa())
-                } else {
-                    DetailUiState.Error
-                }
-            } catch (e: Exception) {
-                DetailUiState.Error
+            statusUiDetail = StatusUiDetail.Loading
+            statusUiDetail = try {
+                StatusUiDetail.Success(
+                    satusiswa = repositoryDataSiswa.getSatuSiswa(idSiswa)
+                )
+            } catch (e: IOException) {
+                StatusUiDetail.Error
+            } catch (e: HttpException) {
+                StatusUiDetail.Error
             }
         }
     }
 
-    suspend fun deleteSiswa() {
-        try {
-            // repositoryDataSiswa.deleteSiswa(_id)
-        } catch (e: Exception) {
-            e.printStackTrace()
+    @SuppressLint("SuspiciousIndentation")
+    suspend fun hapusSatuSiswa() {
+        val resp: Response<Void> =
+            repositoryDataSiswa.hapusSatuSiswa(idSiswa)
+
+        if (resp.isSuccessful) {
+            println("Sukses Hapus Data : ${resp.message()}")
+        } else {
+            println("Gagal Hapus Data : ${resp.errorBody()}")
         }
     }
 }
