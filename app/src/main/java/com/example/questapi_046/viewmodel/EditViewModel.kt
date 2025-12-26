@@ -12,6 +12,8 @@ import com.example.questapi_046.modeldata.toDataSiswa
 import com.example.questapi_046.modeldata.toUiStateSiswa
 import com.example.questapi_046.repositori.RepositoryDataSiswa
 import kotlinx.coroutines.launch
+import com.example.questapi_046.uicontroller.route.DestinasiDetail
+import retrofit2.Response
 
 class EditViewModel(
     savedStateHandle: SavedStateHandle,
@@ -21,17 +23,18 @@ class EditViewModel(
     var uiStateSiswa by mutableStateOf(UIStateSiswa())
         private set
 
-    // Mengambil ID dari navigasi (DestinasiDetail.SISWA_ID)
-    private val _id: Int = checkNotNull(savedStateHandle["id"])
+    private val idSiswa: Int = checkNotNull(savedStateHandle[DestinasiDetail.itemIdArg])
 
     init {
         viewModelScope.launch {
-            // Mengambil data siswa berdasarkan ID untuk ditampilkan di form edit
-            val dataSiswa = repositoryDataSiswa.getDataSiswa().find { it.id == _id }
-            if (dataSiswa != null) {
-                uiStateSiswa = dataSiswa.toUiStateSiswa(true)
-            }
+            uiStateSiswa = repositoryDataSiswa.getSatuSiswa(idSiswa)
+                .toUiStateSiswa(true)
         }
+    }
+
+    fun updateUiState(detailSiswa: DetailSiswa) {
+        uiStateSiswa =
+            UIStateSiswa(detailSiswa = detailSiswa, isEntryValid = validasiInput(detailSiswa))
     }
 
     private fun validasiInput(uiState: DetailSiswa = uiStateSiswa.detailSiswa): Boolean {
@@ -40,20 +43,17 @@ class EditViewModel(
         }
     }
 
-    fun updateUiState(detailSiswa: DetailSiswa) {
-        uiStateSiswa = UIStateSiswa(
-            detailSiswa = detailSiswa,
-            isEntryValid = validasiInput(detailSiswa)
-        )
-    }
+    suspend fun editSatuSiswa() {
+        if (validasiInput(uiStateSiswa.detailSiswa)) {
+            val call: Response<Void> = repositoryDataSiswa.editSatuSiswa(
+                idSiswa,
+                uiStateSiswa.detailSiswa.toDataSiswa()
+            )
 
-    suspend fun updateSiswa() {
-        if (validasiInput()) {
-            try {
-                // Logika update (biasanya menggunakan PUT/UPDATE di repositori)
-                // repositoryDataSiswa.updateSiswa(_id, uiStateSiswa.detailSiswa.toDataSiswa())
-            } catch (e: Exception) {
-                e.printStackTrace()
+            if (call.isSuccessful) {
+                println("Update Sukses : ${call.message()}")
+            } else {
+                println("Update Error : ${call.errorBody()}")
             }
         }
     }
