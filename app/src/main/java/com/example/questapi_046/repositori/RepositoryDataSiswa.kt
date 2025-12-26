@@ -29,4 +29,7 @@ class JaringanRepositoryDataSiswa(
 
     override suspend fun editSatuSiswa(id: Int, dataSiswa: DataSiswa):retrofit2.Response<Void> =
         serviceApiSiswa.editSatuSiswa(id, dataSiswa)
+
+    override suspend fun hapusSatuSiswa(id: Int):retrofit2.Response<Void> =
+        serviceApiSiswa.hapusSatuSiswa(id)
 }
