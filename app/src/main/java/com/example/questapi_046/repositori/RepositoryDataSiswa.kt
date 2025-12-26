@@ -24,4 +24,6 @@ class JaringanRepositoryDataSiswa(
     override suspend fun postDataSiswa(dataSiswa: DataSiswa): Response<Void> {
         return serviceApiSiswa.postSiswa(dataSiswa)
     }
+
+    override suspend fun getSatuSiswa(id: Int): DataSiswa = serviceApiSiswa.getSatuSiswa(id)
 }
